@@ -7,7 +7,7 @@ import {
   registerSchema,
   loginSchema,
   refreshSchema,
-} from "../validators/auth.validator";
+} from "../lib/validators/auth.validator";
 
 const router = Router();
 
@@ -19,12 +19,7 @@ router.post(
   authController.register,
 );
 
-router.post(
-  "/login",
-  rateLimiter,
-  validate(loginSchema),
-  authController.login,
-);
+router.post("/login", rateLimiter, validate(loginSchema), authController.login);
 
 router.post(
   "/refresh",
@@ -35,11 +30,6 @@ router.post(
 
 router.post("/logout", rateLimiter, authenticate, authController.logout);
 
-router.post(
-  "/logout-all",
-  rateLimiter,
-  authenticate,
-  authController.logoutAll,
-);
+router.post("/logout-all", rateLimiter, authenticate, authController.logoutAll);
 
 export default router;

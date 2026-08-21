@@ -1,7 +1,7 @@
 import type { Request, Response, NextFunction } from "express";
-import { redis } from "../config/redis";
-import { env } from "../config/env";
-import { TooManyRequestsError } from "../errors/AppError";
+import { redis } from "../lib/config/redis";
+import { env } from "../lib/config/env";
+import { TooManyRequestsError } from "../lib/errors/AppError";
 
 /**
  * Redis-based sliding-window rate limiter for auth endpoints.
@@ -24,7 +24,7 @@ export async function rateLimiter(
 
     // Current window identifier (floors to the nearest window)
     const currentWindow = Math.floor(Date.now() / 1000 / windowSeconds);
-    const key = `rl:auth:${ip}:${currentWindow}`;
+    const key = "rl:auth:${ip}:${currentWindow}";
 
     const current = await redis.incr(key);
 

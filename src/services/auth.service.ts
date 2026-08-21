@@ -1,25 +1,24 @@
 import { randomUUID } from "crypto";
-import { prisma } from "../config/prisma";
+import { prisma } from "../lib/config/prisma";
 import { Prisma } from "../../generated/prisma/client.js";
-import { env } from "../config/env";
-import { userRepository } from "../repositories/user.repository";
-import { refreshTokenRepository } from "../repositories/refreshToken.repository";
-import { hashPassword, comparePassword } from "../utils/password.util";
+import { env } from "../lib/config/env";
+import { hashPassword, comparePassword } from "../lib/utils/password.util";
 import {
   generateAccessToken,
   generateRefreshToken,
   verifyRefreshToken,
-} from "../utils/jwt.util";
-import { sha256 } from "../utils/hash.util";
-import { ConflictError, UnauthorizedError } from "../errors/AppError";
-import type { RegisterInput, LoginInput } from "../validators/auth.validator";
+} from "../lib/utils/jwt.util";
+import { sha256 } from "../lib/utils/hash.util";
+import { ConflictError, UnauthorizedError } from "../lib/errors/AppError";
+import type {
+  RegisterInput,
+  LoginInput,
+} from "../lib/validators/auth.validator";
 
-// ── Helpers ──────────────────────────────────────────────────────────
+// -- Helpers ----------------------------------------------------------
 
 function refreshTokenExpiresAt(): Date {
-  return new Date(
-    Date.now() + env.JWT_REFRESH_TTL_DAYS * 24 * 60 * 60 * 1000,
-  );
+  return new Date(Date.now() + env.JWT_REFRESH_TTL_DAYS * 24 * 60 * 60 * 1000);
 }
 
 /**
@@ -34,17 +33,19 @@ async function issueTokens(user: { id: string; email: string }) {
   const jti = randomUUID();
   const refreshToken = generateRefreshToken({ userId: user.id }, jti);
 
-  // Store SHA-256 hash of the refresh JWT — not the raw token
-  await refreshTokenRepository.create({
-    userId: user.id,
-    tokenHash: sha256(refreshToken),
-    expiresAt: refreshTokenExpiresAt(),
+  // Store SHA-256 hash of the refresh JWT � not the raw token
+  await prisma.refreshToken.create({
+    data: {
+      userId: user.id,
+      tokenHash: sha256(refreshToken),
+      expiresAt: refreshTokenExpiresAt(),
+    }
   });
 
   return { accessToken, refreshToken };
 }
 
-// ── Service ──────────────────────────────────────────────────────────
+// -- Service ----------------------------------------------------------
 
 export const authService = {
   /**
@@ -54,7 +55,7 @@ export const authService = {
     const { name, email, password, orgName } = input;
 
     // 1. Check uniqueness
-    const existing = await userRepository.findByEmail(email);
+    const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) {
       throw new ConflictError("Email already registered");
     }
@@ -62,7 +63,7 @@ export const authService = {
     // 2. Hash password
     const passwordHash = await hashPassword(password);
 
-    // 3. Transactional: create user → org → membership
+    // 3. Transactional: create user ? org ? membership
     const { user, organization, membership } = await prisma.$transaction(
       async (tx: Prisma.TransactionClient) => {
         const user = await tx.user.create({
@@ -103,7 +104,7 @@ export const authService = {
     const { email, password } = input;
 
     // 1. Find user
-    const user = await userRepository.findByEmail(email);
+    const user = await prisma.user.findUnique({ where: { email } });
     if (!user) {
       throw new UnauthorizedError("Invalid email or password");
     }
@@ -140,7 +141,7 @@ export const authService = {
 
     // 2. Look up the hash in DB
     const tokenHash = sha256(refreshToken);
-    const storedToken = await refreshTokenRepository.findByTokenHash(tokenHash);
+    const storedToken = await prisma.refreshToken.findUnique({ where: { tokenHash } });
 
     if (!storedToken) {
       throw new UnauthorizedError("Refresh token not recognized");
@@ -148,10 +149,13 @@ export const authService = {
 
     // 3. Check revocation
     if (storedToken.revokedAt) {
-      // Possible token reuse attack — revoke ALL tokens for this user
-      await refreshTokenRepository.revokeAllForUser(storedToken.userId);
+      // Possible token reuse attack � revoke ALL tokens for this user
+      await prisma.refreshToken.updateMany({
+        where: { userId: storedToken.userId },
+        data: { revokedAt: new Date() }
+      });
       throw new UnauthorizedError(
-        "Refresh token already used — all sessions revoked",
+        "Refresh token already used � all sessions revoked",
       );
     }
 
@@ -161,10 +165,13 @@ export const authService = {
     }
 
     // 5. Revoke old token (rotation)
-    await refreshTokenRepository.revokeByTokenHash(tokenHash);
+    await prisma.refreshToken.update({
+      where: { tokenHash },
+      data: { revokedAt: new Date() }
+    });
 
     // 6. Fetch user for new access token
-    const user = await userRepository.findById(payload.userId);
+    const user = await prisma.user.findUnique({ where: { id: payload.userId } });
     if (!user) {
       throw new UnauthorizedError("User not found");
     }
@@ -180,18 +187,23 @@ export const authService = {
    */
   async logout(refreshToken: string) {
     const tokenHash = sha256(refreshToken);
-    const storedToken =
-      await refreshTokenRepository.findByTokenHash(tokenHash);
+    const storedToken = await prisma.refreshToken.findUnique({ where: { tokenHash } });
 
     if (storedToken && !storedToken.revokedAt) {
-      await refreshTokenRepository.revokeByTokenHash(tokenHash);
+      await prisma.refreshToken.update({
+        where: { tokenHash },
+        data: { revokedAt: new Date() }
+      });
     }
   },
 
   /**
-   * Revoke ALL refresh tokens for a user (logout all devices — bonus).
+   * Revoke ALL refresh tokens for a user (logout all devices � bonus).
    */
   async logoutAll(userId: string) {
-    await refreshTokenRepository.revokeAllForUser(userId);
+    await prisma.refreshToken.updateMany({
+      where: { userId },
+      data: { revokedAt: new Date() }
+    });
   },
 };

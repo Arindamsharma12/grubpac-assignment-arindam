@@ -1,6 +1,6 @@
 import type { Request, Response, NextFunction } from "express";
-import { AppError, TooManyRequestsError } from "../errors/AppError";
-import { env } from "../config/env";
+import { AppError, TooManyRequestsError } from "../lib/errors/AppError";
+import { env } from "../lib/config/env";
 
 /**
  * Global Express error handler.

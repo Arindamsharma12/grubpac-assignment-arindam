@@ -1,7 +1,7 @@
 import type { Request, Response, NextFunction } from "express";
 import type { ZodSchema } from "zod";
 import { ZodError } from "zod";
-import { BadRequestError } from "../errors/AppError";
+import { BadRequestError } from "../lib/errors/AppError";
 
 /**
  * Returns an Express middleware that validates `req.body` against the

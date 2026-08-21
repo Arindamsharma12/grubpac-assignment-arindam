@@ -1,7 +1,7 @@
 import type { Request, Response, NextFunction } from "express";
 import type { OrgRole } from "../../generated/prisma/client.js";
-import { orgMemberRepository } from "../repositories/orgMember.repository";
-import { ForbiddenError, UnauthorizedError } from "../errors/AppError";
+import { prisma } from "../lib/config/prisma";
+import { ForbiddenError, UnauthorizedError } from "../lib/errors/AppError.js";
 
 /**
  * Role-based authorization middleware factory.
@@ -16,7 +16,7 @@ import { ForbiddenError, UnauthorizedError } from "../errors/AppError";
  * 4. Attaches `req.orgMember = { orgId, role }` for downstream use
  *
  * Security: The org context is ALWAYS derived from the user's verified
- * JWT + database membership lookup — never from client-supplied body fields.
+ * JWT + database membership lookup � never from client-supplied body fields.
  */
 export function authorize(...allowedRoles: OrgRole[]) {
   return async (
@@ -37,13 +37,17 @@ export function authorize(...allowedRoles: OrgRole[]) {
         return;
       }
 
-      const membership = await orgMemberRepository.findByOrgAndUser(
-        orgId,
-        req.user.userId,
-      );
+      const membership = await prisma.orgMember.findUnique({
+        where: {
+          orgId_userId: {
+            orgId,
+            userId: req.user.userId
+          }
+        }
+      });
 
       if (!membership) {
-        // User is not a member of this org → cross-tenant prevention
+        // User is not a member of this org ? cross-tenant prevention
         // Return 403 with no resource details to avoid leaking info
         next(new ForbiddenError("Forbidden"));
         return;

@@ -1,0 +1,187 @@
+
+generator client {
+  provider        = "prisma-client"
+  output          = "../generated/prisma"
+  moduleFormat    = "cjs"
+  previewFeatures = ["fullTextSearchPostgres"]
+}
+
+datasource db {
+  provider = "postgresql"
+}
+enum OrgRole {
+  org_admin
+  member
+}
+
+enum TaskStatus {
+  todo
+  in_progress
+  review
+  done
+}
+
+enum TaskPriority {
+  low
+  medium
+  high
+  urgent
+}
+
+model User {
+  id           String @id @default(uuid()) @db.Uuid
+  name         String @db.VarChar(100)
+  email        String @unique @db.VarChar(255)
+  passwordHash String @db.VarChar(255)
+
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @db.Timestamptz(6)
+
+  // Relations
+  orgMembers    OrgMember[]
+  assignments   TaskAssignment[]
+  comments      Comment[]
+  refreshTokens RefreshToken[]
+
+  @@map("users")
+}
+
+
+model Organization {
+  id   String @id @default(uuid()) @db.Uuid
+  name String @db.VarChar(150)
+
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @db.Timestamptz(6)
+
+  // Relations
+  members  OrgMember[]
+  projects Project[]
+
+  @@map("organizations")
+}
+
+model OrgMember {
+  id     String  @id @default(uuid()) @db.Uuid
+  orgId  String  @db.Uuid
+  userId String  @db.Uuid
+  role   OrgRole @default(member)
+
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@unique([orgId, userId])
+  @@index([userId])
+  @@map("org_members")
+}
+
+
+model Project {
+  id    String @id @default(uuid()) @db.Uuid
+  orgId String @db.Uuid
+
+  name        String  @db.VarChar(200)
+  description String? @db.Text
+
+  createdAt DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime  @updatedAt @db.Timestamptz(6)
+  deletedAt DateTime? @db.Timestamptz(6)
+
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  tasks Task[]
+
+  @@index([orgId, deletedAt])
+
+  @@map("projects")
+}
+
+
+model Task {
+  id        String @id @default(uuid()) @db.Uuid
+  projectId String @db.Uuid
+
+  title       String       @db.VarChar(255)
+  description String?      @db.Text
+  status      TaskStatus   @default(todo)
+  priority    TaskPriority @default(medium)
+  dueDate     DateTime?    @db.Timestamptz(6)
+
+  createdAt DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime  @updatedAt @db.Timestamptz(6)
+  deletedAt DateTime? @db.Timestamptz(6)
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  // Relations
+  assignments TaskAssignment[]
+  comments    Comment[]
+
+  @@index([projectId, status])      // "all in-progress tasks in project X"
+  @@index([projectId, priority])    // "all urgent tasks in project X"
+  @@index([projectId, dueDate])     // "tasks in project X due this week"
+  @@index([projectId, deletedAt])   // "active (non-deleted) tasks in project X"
+
+  @@index([status])
+  @@index([priority])
+  @@index([dueDate])
+
+  @@map("tasks")
+}
+
+model TaskAssignment {
+  id     String @id @default(uuid()) @db.Uuid
+  taskId String @db.Uuid
+  userId String @db.Uuid
+
+  assignedAt DateTime @default(now()) @db.Timestamptz(6)
+
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@unique([taskId, userId])
+
+  @@index([userId])
+
+  @@map("task_assignments")
+}
+
+model Comment {
+  id       String @id @default(uuid()) @db.Uuid
+  taskId   String @db.Uuid
+  authorId String @db.Uuid
+
+  content String @db.Text
+
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @db.Timestamptz(6)
+
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  author User @relation(fields: [authorId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([taskId])
+  @@index([authorId])
+
+  @@map("comments")
+}
+
+
+model RefreshToken {
+  id     String @id @default(uuid()) @db.Uuid
+  userId String @db.Uuid
+
+  tokenHash String @unique @db.VarChar(255)
+
+  expiresAt DateTime  @db.Timestamptz(6)
+  revokedAt DateTime? @db.Timestamptz(6)
+  createdAt DateTime  @default(now()) @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([userId, revokedAt])
+  @@index([expiresAt])
+
+  @@map("refresh_tokens")
+}

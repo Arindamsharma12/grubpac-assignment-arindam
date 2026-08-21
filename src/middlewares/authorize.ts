@@ -1,23 +1,8 @@
 import type { Request, Response, NextFunction } from "express";
-import type { OrgRole } from "../../generated/prisma/client.js";
-import { prisma } from "../lib/config/prisma";
-import { ForbiddenError, UnauthorizedError } from "../lib/errors/AppError.js";
+import type { OrgRole } from "@/../generated/prisma/client.js";
+import { prisma } from "@/lib/config/prisma";
+import { ForbiddenError, UnauthorizedError } from "@/lib/errors/AppError.js";
 
-/**
- * Role-based authorization middleware factory.
- *
- * Usage:
- *   router.get("/orgs/:orgId/projects", authenticate, authorize("org_admin", "member"), handler);
- *
- * How it works:
- * 1. Reads `orgId` from route params (`:orgId`)
- * 2. Looks up the authenticated user's membership in that org
- * 3. Checks the role is in the allowed set
- * 4. Attaches `req.orgMember = { orgId, role }` for downstream use
- *
- * Security: The org context is ALWAYS derived from the user's verified
- * JWT + database membership lookup — never from client-supplied body fields.
- */
 export function authorize(...allowedRoles: OrgRole[]) {
   return async (
     req: Request,
@@ -41,9 +26,9 @@ export function authorize(...allowedRoles: OrgRole[]) {
         where: {
           orgId_userId: {
             orgId,
-            userId: req.user.userId
-          }
-        }
+            userId: req.user.userId,
+          },
+        },
       });
 
       if (!membership) {

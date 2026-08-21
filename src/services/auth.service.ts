@@ -1,19 +1,19 @@
 import { randomUUID } from "crypto";
-import { prisma } from "../lib/config/prisma";
-import { Prisma } from "../../generated/prisma/client.js";
-import { env } from "../lib/config/env";
-import { hashPassword, comparePassword } from "../lib/utils/password.util";
+import { prisma } from "@/lib/config/prisma";
+import { Prisma } from "@/../generated/prisma/client.js";
+import { env } from "@/lib/config/env";
 import {
   generateAccessToken,
   generateRefreshToken,
   verifyRefreshToken,
-} from "../lib/utils/jwt.util";
-import { sha256 } from "../lib/utils/hash.util";
-import { ConflictError, UnauthorizedError } from "../lib/errors/AppError";
+} from "@/lib/utils/jwt.util";
+import { sha256 } from "@/lib/utils/hash.util";
+import { ConflictError, UnauthorizedError } from "@/lib/errors/AppError";
 import type {
   RegisterInput,
   LoginInput,
-} from "../lib/validators/auth.validator";
+} from "@/lib/validators/auth.validator";
+import { comparePassword, hashPassword } from "@/lib/utils/password.util";
 
 // -- Helpers ----------------------------------------------------------
 
@@ -33,13 +33,13 @@ async function issueTokens(user: { id: string; email: string }) {
   const jti = randomUUID();
   const refreshToken = generateRefreshToken({ userId: user.id }, jti);
 
-  // Store SHA-256 hash of the refresh JWT — not the raw token
+  // Store SHA-256 hash of the refresh JWT ï¿½ not the raw token
   await prisma.refreshToken.create({
     data: {
       userId: user.id,
       tokenHash: sha256(refreshToken),
       expiresAt: refreshTokenExpiresAt(),
-    }
+    },
   });
 
   return { accessToken, refreshToken };
@@ -141,7 +141,9 @@ export const authService = {
 
     // 2. Look up the hash in DB
     const tokenHash = sha256(refreshToken);
-    const storedToken = await prisma.refreshToken.findUnique({ where: { tokenHash } });
+    const storedToken = await prisma.refreshToken.findUnique({
+      where: { tokenHash },
+    });
 
     if (!storedToken) {
       throw new UnauthorizedError("Refresh token not recognized");
@@ -149,13 +151,13 @@ export const authService = {
 
     // 3. Check revocation
     if (storedToken.revokedAt) {
-      // Possible token reuse attack — revoke ALL tokens for this user
+      // Possible token reuse attack ï¿½ revoke ALL tokens for this user
       await prisma.refreshToken.updateMany({
         where: { userId: storedToken.userId },
-        data: { revokedAt: new Date() }
+        data: { revokedAt: new Date() },
       });
       throw new UnauthorizedError(
-        "Refresh token already used — all sessions revoked",
+        "Refresh token already used ï¿½ all sessions revoked",
       );
     }
 
@@ -167,11 +169,13 @@ export const authService = {
     // 5. Revoke old token (rotation)
     await prisma.refreshToken.update({
       where: { tokenHash },
-      data: { revokedAt: new Date() }
+      data: { revokedAt: new Date() },
     });
 
     // 6. Fetch user for new access token
-    const user = await prisma.user.findUnique({ where: { id: payload.userId } });
+    const user = await prisma.user.findUnique({
+      where: { id: payload.userId },
+    });
     if (!user) {
       throw new UnauthorizedError("User not found");
     }
@@ -187,23 +191,25 @@ export const authService = {
    */
   async logout(refreshToken: string) {
     const tokenHash = sha256(refreshToken);
-    const storedToken = await prisma.refreshToken.findUnique({ where: { tokenHash } });
+    const storedToken = await prisma.refreshToken.findUnique({
+      where: { tokenHash },
+    });
 
     if (storedToken && !storedToken.revokedAt) {
       await prisma.refreshToken.update({
         where: { tokenHash },
-        data: { revokedAt: new Date() }
+        data: { revokedAt: new Date() },
       });
     }
   },
 
   /**
-   * Revoke ALL refresh tokens for a user (logout all devices — bonus).
+   * Revoke ALL refresh tokens for a user (logout all devices ï¿½ bonus).
    */
   async logoutAll(userId: string) {
     await prisma.refreshToken.updateMany({
       where: { userId },
-      data: { revokedAt: new Date() }
+      data: { revokedAt: new Date() },
     });
   },
 };

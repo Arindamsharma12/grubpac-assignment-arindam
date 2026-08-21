@@ -1,6 +1,6 @@
 import type { Request, Response, NextFunction } from "express";
-import { verifyAccessToken } from "../lib/utils/jwt.util";
-import { UnauthorizedError } from "../lib/errors/AppError";
+import { verifyAccessToken } from "@/lib/utils/jwt.util";
+import { UnauthorizedError } from "@/lib/errors/AppError";
 
 /**
  * JWT authentication middleware.

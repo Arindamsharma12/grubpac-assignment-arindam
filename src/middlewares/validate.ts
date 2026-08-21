@@ -20,7 +20,10 @@ export function validate(schema: ZodSchema) {
           message: e.message,
         }));
 
-        const error = new BadRequestError("Validation failed");
+        const error = new BadRequestError(
+          "Validation failed",
+          "VALIDATION_ERROR",
+        );
         // Attach field-level details so the error handler can include them
         (error as BadRequestError & { details: unknown }).details = fieldErrors;
         next(error);

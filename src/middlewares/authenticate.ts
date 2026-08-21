@@ -1,28 +1,40 @@
 import type { Request, Response, NextFunction } from "express";
 import { verifyAccessToken } from "@/lib/utils/jwt.util";
 import { UnauthorizedError } from "@/lib/errors/AppError";
+import { redis } from "@/lib/config/redis";
 
 /**
  * JWT authentication middleware.
  *
- * Extracts the Bearer token from the Authorization header, verifies it,
- * and attaches `req.user = { userId, email }` for downstream handlers.
+ * Extracts the token from cookies or Authorization header, verifies it,
+ * checks if it is blacklisted, and attaches `req.user = { userId, email }` for downstream handlers.
  */
-export function authenticate(
+export async function authenticate(
   req: Request,
   _res: Response,
   next: NextFunction,
-): void {
-  const authHeader = req.headers.authorization;
+): Promise<void> {
+  let token = req.cookies?.accessToken;
 
-  if (!authHeader?.startsWith("Bearer ")) {
-    next(new UnauthorizedError("Missing or malformed Authorization header"));
+  if (!token) {
+    const authHeader = req.headers.authorization;
+    if (authHeader?.startsWith("Bearer ")) {
+      token = authHeader.slice(7); // strip "Bearer "
+    }
+  }
+
+  if (!token) {
+    next(new UnauthorizedError("Missing authentication token"));
     return;
   }
 
-  const token = authHeader.slice(7); // strip "Bearer "
-
   try {
+    const isBlacklisted = await redis.get(`bl_${token}`);
+    if (isBlacklisted) {
+      next(new UnauthorizedError("Token is invalidated"));
+      return;
+    }
+
     const payload = verifyAccessToken(token);
     req.user = { userId: payload.userId, email: payload.email };
     next();

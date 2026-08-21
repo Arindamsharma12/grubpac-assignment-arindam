@@ -1,19 +1,28 @@
 export class AppError extends Error {
   public readonly statusCode: number;
   public readonly isOperational: boolean;
+  public readonly code?: string;
 
-  constructor(message: string, statusCode: number, isOperational = true) {
+  constructor(
+    message: string,
+    statusCode: number,
+    isOperational = true,
+    code?: string,
+  ) {
     super(message);
     this.statusCode = statusCode;
     this.isOperational = isOperational;
+    if (code !== undefined) {
+      this.code = code;
+    }
     Object.setPrototypeOf(this, new.target.prototype);
     Error.captureStackTrace(this, this.constructor);
   }
 }
 
 export class BadRequestError extends AppError {
-  constructor(message = "Bad request") {
-    super(message, 400);
+  constructor(message = "Bad request", code = "BAD_REQUEST") {
+    super(message, 400, true, code);
   }
 }
 
@@ -30,8 +39,8 @@ export class ForbiddenError extends AppError {
 }
 
 export class NotFoundError extends AppError {
-  constructor(message = "Not found") {
-    super(message, 404);
+  constructor(message = "Not found", code = "NOT_FOUND") {
+    super(message, 404, true, code);
   }
 }
 

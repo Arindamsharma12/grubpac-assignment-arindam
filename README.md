@@ -74,9 +74,32 @@ The project uses Docker and Docker Compose for a seamless local development expe
    curl http://localhost:3000/health
    ```
 
-## 5. Security
+## 5. Available Scripts
+The `package.json` file includes several useful scripts for local development, testing, and database management:
+
+### Development & Build
+- `npm run dev`: Starts the API server in development mode with hot-reloading (using `tsx`).
+- `npm run build`: Compiles the TypeScript code into the `dist/` folder.
+- `npm start`: Starts the compiled API server in production mode.
+- `npm run start:worker`: Starts the compiled background worker in production mode.
+
+### Database (Prisma)
+- `npm run db:migrate`: Applies migrations and updates the local Prisma schema.
+- `npm run db:deploy`: Deploys pending migrations (used primarily in CI/CD or Docker).
+- `npm run db:reset`: Drops the database and applies all migrations from scratch.
+- `npm run db:studio`: Opens Prisma Studio, a visual UI for interacting with your database.
+- `npm run db:seed`: Runs the database seed script to populate initial/dummy data.
+
+### Testing & Linting
+- `npm test`: Runs the Vitest test suite.
+- `npm run test:watch`: Runs Vitest in watch mode.
+- `npm run test:coverage`: Generates a test coverage report using Vitest.
+- `npm run lint`: Lints the codebase using ESLint.
+- `npm run format`: Formats the codebase using Prettier.
+
+## 6. Security
 - **Credential Management:** Sensitive credentials, such as `DATABASE_URL` and `JWT` secrets, are managed exclusively via environment variables (`.env`). The `.env` file is explicitly ignored in `.gitignore`. **No passwords, API keys, or sensitive credentials are committed to the repository.**
 - **Authentication & Authorization:** The application implements secure JWT-based authentication. Passwords are securely hashed using `bcrypt` before being persisted to the database.
 
-## 6. Submission
+## 7. Submission
 This repository acts as the single source of truth for the assignment submission. All necessary code, configuration files, and documentation (Architecture, Setup, and API details) are accessible within this single location as per the submission requirements.

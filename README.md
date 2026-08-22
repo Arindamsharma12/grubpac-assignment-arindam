@@ -78,7 +78,24 @@ The project uses Docker and Docker Compose for a seamless local development expe
    curl http://localhost:3000/health
    ```
 
-## 6. Available Scripts
+## 6. Seed Data & Test Account
+The database includes a robust seed script (`npm run db:seed`) to quickly populate the system with sample data for testing. 
+
+When the seed script is run, it generates:
+- **5 Users** (including one primary test account)
+- **2 Organizations** with members mapped to various roles
+- **4 Projects** distributed across the organizations
+- **15 Tasks** with varying statuses, priorities, and due dates
+- Assorted **Task Assignments** and **Comments** on the tasks
+
+### Test Account Credentials
+You can log in to the Swagger UI or via any API client using the following seeded test account:
+- **Email:** `test@example.com`
+- **Password:** `password123`
+
+*(This user is automatically assigned the `org_admin` role in their primary organization).*
+
+## 7. Available Scripts
 The `package.json` file includes several useful scripts for local development, testing, and database management:
 
 ### Development & Build
@@ -101,9 +118,9 @@ The `package.json` file includes several useful scripts for local development, t
 - `npm run lint`: Lints the codebase using ESLint.
 - `npm run format`: Formats the codebase using Prettier.
 
-## 7. Security
+## 8. Security
 - **Credential Management:** Sensitive credentials, such as `DATABASE_URL` and `JWT` secrets, are managed exclusively via environment variables (`.env`). The `.env` file is explicitly ignored in `.gitignore`. **No passwords, API keys, or sensitive credentials are committed to the repository.**
 - **Authentication & Authorization:** The application implements secure JWT-based authentication. Passwords are securely hashed using `bcrypt` before being persisted to the database.
 
-## 8. Submission
+## 9. Submission
 This repository acts as the single source of truth for the assignment submission. All necessary code, configuration files, and documentation (Architecture, Setup, and API details) are accessible within this single location as per the submission requirements.

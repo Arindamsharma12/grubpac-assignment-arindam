@@ -5,7 +5,7 @@ export const getMyOrganizations = async (
   req: Request,
   res: Response,
   next: NextFunction,
-) => {
+): Promise<void> => {
   try {
     const userId = req.user?.userId;
     if (!userId) {
@@ -23,7 +23,7 @@ export const getOrganizationById = async (
   req: Request,
   res: Response,
   next: NextFunction,
-) => {
+): Promise<void> => {
   try {
     const orgId = req.params.orgId as string;
     if (!orgId) {
@@ -41,7 +41,7 @@ export const addMember = async (
   req: Request,
   res: Response,
   next: NextFunction,
-) => {
+): Promise<void> => {
   try {
     const orgId = req.params.orgId as string;
     const { userId, role } = req.body;
@@ -65,7 +65,7 @@ export const removeMember = async (
   req: Request,
   res: Response,
   next: NextFunction,
-) => {
+): Promise<void> => {
   try {
     const orgId = req.params.orgId as string;
     const userId = req.params.userId as string;

@@ -1,7 +1,26 @@
 import { prisma } from "@/lib/config/prisma";
+import { NotFoundError, BadRequestError } from "@/lib/errors/AppError";
+import type { OrgRole, OrgMember } from "@/../generated/prisma/client.js";
+
+interface OrgMemberView {
+  id: string;
+  name: string;
+  email: string;
+  role: OrgRole | string;
+  joinedAt: Date;
+}
+
+interface OrganizationView {
+  id: string;
+  name: string;
+  role?: OrgRole | string;
+  joinedAt?: Date;
+  createdAt?: Date;
+  members: OrgMemberView[];
+}
 
 export class OrgService {
-  static async getUserOrganizations(userId: string) {
+  static async getUserOrganizations(userId: string): Promise<OrganizationView[]> {
     const memberships = await prisma.orgMember.findMany({
       where: { userId },
       include: {
@@ -34,7 +53,7 @@ export class OrgService {
     }));
   }
 
-  static async getOrganizationById(orgId: string) {
+  static async getOrganizationById(orgId: string): Promise<OrganizationView> {
     const org = await prisma.organization.findUnique({
       where: { id: orgId },
       include: {
@@ -49,7 +68,7 @@ export class OrgService {
     });
 
     if (!org) {
-      throw new Error("Organization not found");
+      throw new NotFoundError("Organization not found", "ORG_NOT_FOUND");
     }
 
     return {
@@ -70,11 +89,11 @@ export class OrgService {
     orgId: string,
     userId: string,
     role: "org_admin" | "member" = "member",
-  ) {
+  ): Promise<OrgMember> {
     // Check if user exists
     const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user) {
-      throw new Error("User not found");
+      throw new NotFoundError("User not found", "USER_NOT_FOUND");
     }
 
     // Upsert or Create member
@@ -87,7 +106,7 @@ export class OrgService {
     });
   }
 
-  static async removeMemberFromOrganization(orgId: string, userId: string) {
+  static async removeMemberFromOrganization(orgId: string, userId: string): Promise<OrgMember> {
     return prisma.orgMember.delete({
       where: {
         orgId_userId: { orgId, userId },

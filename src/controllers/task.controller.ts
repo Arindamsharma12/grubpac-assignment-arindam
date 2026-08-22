@@ -6,7 +6,7 @@ export const createTask = async (
   req: Request,
   res: Response,
   next: NextFunction,
-) => {
+): Promise<void> => {
   try {
     const orgId = req.params.orgId as string;
     const projectId = req.params.projectId as string;
@@ -21,7 +21,7 @@ export const getTasks = async (
   req: Request,
   res: Response,
   next: NextFunction,
-) => {
+): Promise<void> => {
   try {
     const orgId = req.params.orgId as string;
     const projectId = req.params.projectId as string;
@@ -67,7 +67,7 @@ export const getTaskById = async (
   req: Request,
   res: Response,
   next: NextFunction,
-) => {
+): Promise<void> => {
   try {
     const orgId = req.params.orgId as string;
     const projectId = req.params.projectId as string;
@@ -83,7 +83,7 @@ export const updateTask = async (
   req: Request,
   res: Response,
   next: NextFunction,
-) => {
+): Promise<void> => {
   try {
     const orgId = req.params.orgId as string;
     const projectId = req.params.projectId as string;
@@ -104,7 +104,7 @@ export const deleteTask = async (
   req: Request,
   res: Response,
   next: NextFunction,
-) => {
+): Promise<void> => {
   try {
     const orgId = req.params.orgId as string;
     const projectId = req.params.projectId as string;
@@ -120,7 +120,7 @@ export const assignUser = async (
   req: Request,
   res: Response,
   next: NextFunction,
-) => {
+): Promise<void> => {
   try {
     const orgId = req.params.orgId as string;
     const projectId = req.params.projectId as string;
@@ -142,7 +142,7 @@ export const unassignUser = async (
   req: Request,
   res: Response,
   next: NextFunction,
-) => {
+): Promise<void> => {
   try {
     const orgId = req.params.orgId as string;
     const projectId = req.params.projectId as string;
@@ -164,7 +164,7 @@ export const bulkUpdateStatus = async (
   req: Request,
   res: Response,
   next: NextFunction,
-) => {
+): Promise<void> => {
   try {
     const orgId = req.params.orgId as string;
     const projectId = req.params.projectId as string;
@@ -180,7 +180,7 @@ export const getDashboard = async (
   req: Request,
   res: Response,
   next: NextFunction,
-) => {
+): Promise<void> => {
   try {
     const orgId = req.params.orgId as string;
     const projectId = req.params.projectId as string;

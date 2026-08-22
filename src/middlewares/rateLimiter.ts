@@ -15,7 +15,7 @@ export async function rateLimiter(
 
     // Current window identifier (floors to the nearest window)
     const currentWindow = Math.floor(Date.now() / 1000 / windowSeconds);
-    const key = "rl:auth:${ip}:${currentWindow}";
+    const key = `rl:auth:${ip}:${currentWindow}`;
 
     const current = await redis.incr(key);
 

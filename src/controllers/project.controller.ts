@@ -1,11 +1,12 @@
 import type { Request, Response, NextFunction } from "express";
 import { ProjectService } from "@/services/project.service";
+import { TaskService } from "@/services/task.service";
 
 export const createProject = async (
   req: Request,
   res: Response,
   next: NextFunction,
-) => {
+): Promise<void> => {
   try {
     const orgId = req.params.orgId as string;
     const project = await ProjectService.createProject(orgId, req.body);
@@ -19,7 +20,7 @@ export const getProjects = async (
   req: Request,
   res: Response,
   next: NextFunction,
-) => {
+): Promise<void> => {
   try {
     const orgId = req.params.orgId as string;
     const limit = parseInt(req.query.limit as string) || 20;
@@ -43,7 +44,7 @@ export const getProjectById = async (
   req: Request,
   res: Response,
   next: NextFunction,
-) => {
+): Promise<void> => {
   try {
     const orgId = req.params.orgId as string;
     const projectId = req.params.projectId as string;
@@ -58,7 +59,7 @@ export const updateProject = async (
   req: Request,
   res: Response,
   next: NextFunction,
-) => {
+): Promise<void> => {
   try {
     const orgId = req.params.orgId as string;
     const projectId = req.params.projectId as string;
@@ -77,7 +78,7 @@ export const deleteProject = async (
   req: Request,
   res: Response,
   next: NextFunction,
-) => {
+): Promise<void> => {
   try {
     const orgId = req.params.orgId as string;
     const projectId = req.params.projectId as string;
@@ -92,11 +93,11 @@ export const getProjectDashboard = async (
   req: Request,
   res: Response,
   next: NextFunction,
-) => {
+): Promise<void> => {
   try {
     const orgId = req.params.orgId as string;
     const projectId = req.params.projectId as string;
-    const dashboard = await ProjectService.getProjectDashboard(orgId, projectId);
+    const dashboard = await TaskService.getDashboard(orgId, projectId);
     res.json({ data: dashboard });
   } catch (error) {
     next(error);

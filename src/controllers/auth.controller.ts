@@ -31,7 +31,7 @@ const clearAuthCookies = (res: Response) => {
 };
 
 export const authController = {
-  async register(req: Request, res: Response, next: NextFunction) {
+  async register(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const result = await authService.register(req.body);
 
@@ -46,7 +46,7 @@ export const authController = {
     }
   },
 
-  async login(req: Request, res: Response, next: NextFunction) {
+  async login(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const result = await authService.login(req.body);
 
@@ -61,13 +61,14 @@ export const authController = {
     }
   },
 
-  async refresh(req: Request, res: Response, next: NextFunction) {
+  async refresh(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const refreshToken = req.cookies?.refreshToken || req.body.refreshToken;
       if (!refreshToken) {
-        return res
+        res
           .status(401)
           .json({ status: "error", message: "No refresh token provided" });
+        return;
       }
 
       const result = await authService.refresh(refreshToken);
@@ -83,7 +84,7 @@ export const authController = {
     }
   },
 
-  async logout(req: Request, res: Response, next: NextFunction) {
+  async logout(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const refreshToken = req.cookies?.refreshToken || req.body.refreshToken;
       let accessToken = req.cookies?.accessToken;
@@ -114,7 +115,7 @@ export const authController = {
     }
   },
 
-  async logoutAll(req: Request, res: Response, next: NextFunction) {
+  async logoutAll(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const userId = req.user!.userId;
       await authService.logoutAll(userId);
@@ -142,7 +143,7 @@ export const authController = {
     }
   },
 
-  async getMe(req: Request, res: Response, next: NextFunction) {
+  async getMe(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const userId = req.user!.userId;
       const userProfile = await authService.getMe(userId);

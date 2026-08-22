@@ -4,9 +4,26 @@ import type {
   Prisma,
   TaskStatus,
   TaskPriority,
+  Task,
 } from "@/../generated/prisma/client.js";
 import { ProjectService } from "./project.service";
 import { emailQueue, redisConnection } from "@/lib/queue";
+
+type TaskWithAssignments = Prisma.TaskGetPayload<{
+  include: { assignments: { include: { user: { select: { id: true; name: true; email: true } } } } };
+}>;
+
+interface OffsetPaginatedResult<T> {
+  data: T[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+interface CursorPaginatedResult<T> {
+  data: T[];
+  next_cursor: string | null;
+}
 
 interface TaskFilters {
   status?: TaskStatus;
@@ -28,7 +45,7 @@ export class TaskService {
       priority?: TaskPriority;
       dueDate?: string;
     },
-  ) {
+  ): Promise<Task> {
     // Verify project belongs to org
     await ProjectService.getProjectById(orgId, projectId);
 
@@ -53,7 +70,7 @@ export class TaskService {
     projectId: string,
     filters: TaskFilters,
     options: { limit: number; cursor?: string; page?: number },
-  ) {
+  ): Promise<OffsetPaginatedResult<TaskWithAssignments> | CursorPaginatedResult<TaskWithAssignments>> {
     // Verify project belongs to org
     await ProjectService.getProjectById(orgId, projectId);
 
@@ -101,7 +118,7 @@ export class TaskService {
       ]);
       return { data, total, page, limit };
     } else {
-      const findArgs: any = {
+      const findArgs: Prisma.TaskFindManyArgs = {
         where,
         take: limit + 1,
         orderBy: { id: "asc" },
@@ -116,7 +133,7 @@ export class TaskService {
       if (cursor) {
         findArgs.cursor = { id: cursor };
       }
-      const data = await prisma.task.findMany(findArgs);
+      const data = (await prisma.task.findMany(findArgs)) as TaskWithAssignments[];
 
       let next_cursor: string | null = null;
       if (data.length > limit) {
@@ -128,7 +145,7 @@ export class TaskService {
     }
   }
 
-  static async getTaskById(orgId: string, projectId: string, taskId: string) {
+  static async getTaskById(orgId: string, projectId: string, taskId: string): Promise<TaskWithAssignments> {
     await ProjectService.getProjectById(orgId, projectId);
 
     const task = await prisma.task.findFirst({
@@ -156,7 +173,7 @@ export class TaskService {
       priority?: TaskPriority;
       dueDate?: string;
     },
-  ) {
+  ): Promise<Task> {
     const task = await this.getTaskById(orgId, projectId, taskId);
     return prisma.task.update({
       where: { id: task.id },
@@ -174,7 +191,7 @@ export class TaskService {
     });
   }
 
-  static async deleteTask(orgId: string, projectId: string, taskId: string) {
+  static async deleteTask(orgId: string, projectId: string, taskId: string): Promise<Task> {
     const task = await this.getTaskById(orgId, projectId, taskId);
     return prisma.task.update({
       where: { id: task.id },
@@ -187,7 +204,7 @@ export class TaskService {
     projectId: string,
     taskId: string,
     userId: string,
-  ) {
+  ): Promise<{ task: TaskWithAssignments; jobId: string | undefined }> {
     const task = await this.getTaskById(orgId, projectId, taskId);
 
     const member = await prisma.orgMember.findUnique({
@@ -263,7 +280,7 @@ export class TaskService {
     projectId: string,
     taskId: string,
     userId: string,
-  ) {
+  ): Promise<TaskWithAssignments> {
     const task = await this.getTaskById(orgId, projectId, taskId);
     await prisma.taskAssignment.deleteMany({
       where: { taskId: task.id, userId },
@@ -276,7 +293,7 @@ export class TaskService {
     projectId: string,
     taskIds: string[],
     status: TaskStatus,
-  ) {
+  ): Promise<void> {
     await ProjectService.getProjectById(orgId, projectId);
 
     await prisma.task.updateMany({
@@ -289,7 +306,7 @@ export class TaskService {
     });
   }
 
-  static async getDashboard(orgId: string, projectId: string) {
+  static async getDashboard(orgId: string, projectId: string): Promise<Record<string, number>> {
     await ProjectService.getProjectById(orgId, projectId);
 
     const counts = await prisma.task.groupBy({

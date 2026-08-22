@@ -1,12 +1,15 @@
 import { prisma } from "@/lib/config/prisma";
 import { NotFoundError } from "@/lib/errors/AppError";
-import type { Prisma } from "@/../generated/prisma/client.js";
+import type { Prisma, Project } from "@/../generated/prisma/client.js";
+
+interface OffsetPaginatedResult<T> { data: T[]; total: number; page: number; limit: number; }
+interface CursorPaginatedResult<T> { data: T[]; next_cursor: string | null; }
 
 export class ProjectService {
   static async createProject(
     orgId: string,
     data: { name: string; description?: string },
-  ) {
+  ): Promise<Project> {
     return prisma.project.create({
       data: {
         orgId,
@@ -25,7 +28,7 @@ export class ProjectService {
       cursor?: string;
       page?: number;
     },
-  ) {
+  ): Promise<OffsetPaginatedResult<Project> | CursorPaginatedResult<Project>> {
     const { limit, cursor, page } = options;
 
     if (page !== undefined) {
@@ -43,7 +46,7 @@ export class ProjectService {
       return { data, total, page, limit };
     } else {
       // Cursor pagination
-      const findArgs: any = {
+      const findArgs: Prisma.ProjectFindManyArgs = {
         where: { orgId, deletedAt: null },
         take: limit + 1,
         orderBy: { id: "asc" },
@@ -63,7 +66,7 @@ export class ProjectService {
     }
   }
 
-  static async getProjectById(orgId: string, projectId: string) {
+  static async getProjectById(orgId: string, projectId: string): Promise<Project> {
     const project = await prisma.project.findFirst({
       where: { id: projectId, orgId, deletedAt: null },
     });
@@ -77,7 +80,7 @@ export class ProjectService {
     orgId: string,
     projectId: string,
     data: { name?: string; description?: string },
-  ) {
+  ): Promise<Project> {
     const project = await this.getProjectById(orgId, projectId);
     return prisma.project.update({
       where: { id: project.id },
@@ -85,7 +88,7 @@ export class ProjectService {
     });
   }
 
-  static async deleteProject(orgId: string, projectId: string) {
+  static async deleteProject(orgId: string, projectId: string): Promise<Project> {
     const project = await this.getProjectById(orgId, projectId);
     // Soft delete
     return prisma.project.update({
@@ -94,21 +97,4 @@ export class ProjectService {
     });
   }
 
-  static async getProjectDashboard(orgId: string, projectId: string) {
-    await this.getProjectById(orgId, projectId);
-
-    const counts = await prisma.task.groupBy({
-      by: ["status"],
-      where: { projectId, deletedAt: null },
-      _count: { _all: true },
-    });
-
-    return counts.reduce(
-      (acc, curr) => {
-        acc[curr.status] = curr._count._all;
-        return acc;
-      },
-      {} as Record<string, number>,
-    );
-  }
 }

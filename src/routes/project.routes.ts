@@ -10,19 +10,12 @@ import {
   getProjectDashboard,
 } from "@/controllers/project.controller";
 import { validate } from "@/middlewares/validate";
-import { z } from "zod";
+import {
+  createProjectSchema,
+  updateProjectSchema,
+} from "@/lib/validators/project.validator";
 
 const router = Router({ mergeParams: true });
-
-const createProjectSchema = z.object({
-  name: z.string().min(1).max(200),
-  description: z.string().optional(),
-});
-
-const updateProjectSchema = z.object({
-  name: z.string().min(1).max(200).optional(),
-  description: z.string().optional(),
-});
 
 router.use(authenticate, authorize());
 

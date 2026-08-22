@@ -6,7 +6,7 @@ export const getJobStatus = async (
   req: Request,
   res: Response,
   next: NextFunction,
-) => {
+): Promise<void> => {
   try {
     const id = req.params.id as string;
 

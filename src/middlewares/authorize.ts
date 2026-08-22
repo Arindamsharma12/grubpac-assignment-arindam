@@ -3,7 +3,7 @@ import type { OrgRole } from "@/../generated/prisma/client.js";
 import { prisma } from "@/lib/config/prisma";
 import { ForbiddenError, UnauthorizedError } from "@/lib/errors/AppError.js";
 
-export function authorize(...allowedRoles: OrgRole[]) {
+export function authorize(allowedRoles: OrgRole[] = [], customMessage?: string) {
   return async (
     req: Request,
     _res: Response,
@@ -39,7 +39,7 @@ export function authorize(...allowedRoles: OrgRole[]) {
       }
 
       if (allowedRoles.length > 0 && !allowedRoles.includes(membership.role)) {
-        next(new ForbiddenError("Insufficient permissions"));
+        next(new ForbiddenError(customMessage || "Insufficient permissions"));
         return;
       }
 

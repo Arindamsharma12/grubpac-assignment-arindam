@@ -48,9 +48,6 @@ async function issueTokens(user: { id: string; email: string }) {
 // -- Service ----------------------------------------------------------
 
 export const authService = {
-  /**
-   * Register a new user, create their organization, and make them admin.
-   */
   async register(input: RegisterInput) {
     const { name, email, password, orgName } = input;
 
@@ -225,7 +222,7 @@ export const authService = {
         email: true,
         createdAt: true,
         updatedAt: true,
-      }
+      },
     });
 
     if (!user) {

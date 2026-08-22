@@ -87,3 +87,18 @@ export const deleteProject = async (
     next(error);
   }
 };
+
+export const getProjectDashboard = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const orgId = req.params.orgId as string;
+    const projectId = req.params.projectId as string;
+    const dashboard = await ProjectService.getProjectDashboard(orgId, projectId);
+    res.json({ data: dashboard });
+  } catch (error) {
+    next(error);
+  }
+};

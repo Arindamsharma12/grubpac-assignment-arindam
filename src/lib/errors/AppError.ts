@@ -27,14 +27,14 @@ export class BadRequestError extends AppError {
 }
 
 export class UnauthorizedError extends AppError {
-  constructor(message = "Unauthorized") {
-    super(message, 401);
+  constructor(message = "Unauthorized", code = "UNAUTHORIZED") {
+    super(message, 401, true, code);
   }
 }
 
 export class ForbiddenError extends AppError {
-  constructor(message = "Forbidden") {
-    super(message, 403);
+  constructor(message = "Forbidden", code = "FORBIDDEN") {
+    super(message, 403, true, code);
   }
 }
 
@@ -45,16 +45,16 @@ export class NotFoundError extends AppError {
 }
 
 export class ConflictError extends AppError {
-  constructor(message = "Conflict") {
-    super(message, 409);
+  constructor(message = "Conflict", code = "CONFLICT") {
+    super(message, 409, true, code);
   }
 }
 
 export class TooManyRequestsError extends AppError {
   public readonly retryAfterSeconds: number;
 
-  constructor(retryAfterSeconds: number, message = "Too many requests") {
-    super(message, 429);
+  constructor(retryAfterSeconds: number, message = "Too many requests", code = "TOO_MANY_REQUESTS") {
+    super(message, 429, true, code);
     this.retryAfterSeconds = retryAfterSeconds;
   }
 }

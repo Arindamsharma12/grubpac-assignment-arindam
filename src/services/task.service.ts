@@ -6,6 +6,7 @@ import type {
   TaskPriority,
 } from "@/../generated/prisma/client.js";
 import { ProjectService } from "./project.service";
+import { emailQueue, redisConnection } from "@/lib/queue";
 
 interface TaskFilters {
   status?: TaskStatus;
@@ -189,9 +190,9 @@ export class TaskService {
   ) {
     const task = await this.getTaskById(orgId, projectId, taskId);
 
-    // The assigned user must belong to the same organization as the task.
     const member = await prisma.orgMember.findUnique({
       where: { orgId_userId: { orgId, userId } },
+      include: { user: true },
     });
     if (!member) {
       throw new BadRequestError(
@@ -200,17 +201,61 @@ export class TaskService {
       );
     }
 
-    try {
-      await prisma.taskAssignment.create({
-        data: {
+    // Bonus: Deduplicate assignments within 5 seconds
+    const dedupKey = `dedup:assign:${taskId}:${userId}`;
+    const setNxResult = await redisConnection.set(dedupKey, "1", "EX", 5, "NX");
+    if (!setNxResult) {
+      throw new BadRequestError(
+        "Duplicate assignment request",
+        "DUPLICATE_ASSIGNMENT",
+      );
+    }
+
+    /*
+     * Consistency Strategy:
+     * We use an interactive Prisma transaction.
+     * We first persist the assignment to the database. If it succeeds, we enqueue the
+     * email job to Redis via BullMQ. If enqueueing fails, the transaction rolls back,
+     * ensuring we don't have an assignment without a corresponding notification.
+     * Note: If Redis enqueue succeeds but the DB commit subsequently fails, we could
+     * end up with a ghost job. For strict distributed consistency, an Outbox Pattern
+     * is required, but this transaction block covers the primary failure case (job enqueue failure).
+     */
+    let jobId: string | undefined;
+
+    await prisma.$transaction(async (tx) => {
+      try {
+        await tx.taskAssignment.create({
+          data: {
+            taskId: task.id,
+            userId,
+          },
+        });
+      } catch (error: any) {
+        // If unique constraint violation, ignore (already assigned)
+        if (error.code === "P2002") {
+          return;
+        }
+        throw error;
+      }
+
+      const job = await emailQueue.add(
+        "send-assignment-email",
+        {
           taskId: task.id,
           userId,
+          email: member.user.email,
+          title: task.title,
         },
-      });
-    } catch (error) {
-      // Ignore if already assigned
-    }
-    return this.getTaskById(orgId, projectId, taskId);
+        {
+          jobId: `assign-${taskId}-${userId}-${Date.now()}`,
+        },
+      );
+      jobId = job.id;
+    });
+
+    const updatedTask = await this.getTaskById(orgId, projectId, taskId);
+    return { task: updatedTask, jobId };
   }
 
   static async unassignUser(

@@ -93,4 +93,22 @@ export class ProjectService {
       data: { deletedAt: new Date() },
     });
   }
+
+  static async getProjectDashboard(orgId: string, projectId: string) {
+    await this.getProjectById(orgId, projectId);
+
+    const counts = await prisma.task.groupBy({
+      by: ["status"],
+      where: { projectId, deletedAt: null },
+      _count: { _all: true },
+    });
+
+    return counts.reduce(
+      (acc, curr) => {
+        acc[curr.status] = curr._count._all;
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
+  }
 }

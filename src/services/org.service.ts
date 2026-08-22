@@ -5,7 +5,17 @@ export class OrgService {
     const memberships = await prisma.orgMember.findMany({
       where: { userId },
       include: {
-        organization: true,
+        organization: {
+          include: {
+            members: {
+              include: {
+                user: {
+                  select: { id: true, name: true, email: true },
+                },
+              },
+            },
+          },
+        },
       },
     });
 
@@ -14,10 +24,53 @@ export class OrgService {
       name: membership.organization.name,
       role: membership.role,
       joinedAt: membership.createdAt,
+      members: membership.organization.members.map((m) => ({
+        id: m.userId,
+        name: m.user.name,
+        email: m.user.email,
+        role: m.role,
+        joinedAt: m.createdAt,
+      })),
     }));
   }
 
-  static async addMemberToOrganization(orgId: string, userId: string, role: "org_admin" | "member" = "member") {
+  static async getOrganizationById(orgId: string) {
+    const org = await prisma.organization.findUnique({
+      where: { id: orgId },
+      include: {
+        members: {
+          include: {
+            user: {
+              select: { id: true, name: true, email: true },
+            },
+          },
+        },
+      },
+    });
+
+    if (!org) {
+      throw new Error("Organization not found");
+    }
+
+    return {
+      id: org.id,
+      name: org.name,
+      createdAt: org.createdAt,
+      members: org.members.map((m) => ({
+        id: m.userId,
+        name: m.user.name,
+        email: m.user.email,
+        role: m.role,
+        joinedAt: m.createdAt,
+      })),
+    };
+  }
+
+  static async addMemberToOrganization(
+    orgId: string,
+    userId: string,
+    role: "org_admin" | "member" = "member",
+  ) {
     // Check if user exists
     const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user) {
@@ -27,10 +80,18 @@ export class OrgService {
     // Upsert or Create member
     return prisma.orgMember.upsert({
       where: {
-        orgId_userId: { orgId, userId }
+        orgId_userId: { orgId, userId },
       },
       update: { role },
       create: { orgId, userId, role },
+    });
+  }
+
+  static async removeMemberFromOrganization(orgId: string, userId: string) {
+    return prisma.orgMember.delete({
+      where: {
+        orgId_userId: { orgId, userId },
+      },
     });
   }
 }

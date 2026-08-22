@@ -1,4 +1,40 @@
 services:
+  api:
+    build: .
+    container_name: taskflow-api
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=postgresql://taskflow:taskflow_password@postgres:5432/taskflow?schema=public
+      - REDIS_URL=redis://redis:6379
+      - PORT=3000
+      - JWT_ACCESS_SECRET=taskflow-access-secret-123
+      - JWT_REFRESH_SECRET=taskflow-refresh-secret-123
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: >
+      sh -c "npm run db:deploy && npm start"
+
+  worker:
+    build: .
+    container_name: taskflow-worker
+    restart: unless-stopped
+    environment:
+      - DATABASE_URL=postgresql://taskflow:taskflow_password@postgres:5432/taskflow?schema=public
+      - REDIS_URL=redis://redis:6379
+      - JWT_ACCESS_SECRET=taskflow-access-secret-123
+      - JWT_REFRESH_SECRET=taskflow-refresh-secret-123
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: npm run start:worker
+
   postgres:
     image: postgres:17-alpine
     container_name: taskflow-postgres

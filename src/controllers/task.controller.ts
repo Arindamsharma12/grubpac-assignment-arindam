@@ -126,8 +126,13 @@ export const assignUser = async (
     const projectId = req.params.projectId as string;
     const taskId = req.params.taskId as string;
     const { userId } = req.body;
-    const task = await TaskService.assignUser(orgId, projectId, taskId, userId);
-    res.json({ data: task });
+    const result = await TaskService.assignUser(
+      orgId,
+      projectId,
+      taskId,
+      userId,
+    );
+    res.json({ data: result.task, jobId: result.jobId });
   } catch (error) {
     next(error);
   }

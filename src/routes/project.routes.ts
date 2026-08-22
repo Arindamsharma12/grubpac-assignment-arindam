@@ -7,6 +7,7 @@ import {
   getProjectById,
   updateProject,
   deleteProject,
+  getProjectDashboard,
 } from "@/controllers/project.controller";
 import { validate } from "@/middlewares/validate";
 import { z } from "zod";
@@ -27,8 +28,9 @@ router.use(authenticate, authorize());
 
 router.post("/", validate(createProjectSchema), createProject);
 router.get("/", getProjects);
+router.get("/:projectId/dashboard", getProjectDashboard);
 router.get("/:projectId", getProjectById);
 router.put("/:projectId", validate(updateProjectSchema), updateProject);
-router.delete("/:projectId", deleteProject);
+router.delete("/:projectId", authorize(["org_admin"], "Only org admin can delete the project"), deleteProject);
 
 export default router;

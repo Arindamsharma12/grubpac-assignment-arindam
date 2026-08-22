@@ -1,12 +1,11 @@
 import { Router } from "express";
+import { getJobStatus } from "@/controllers/job.controller";
 import { authenticate } from "@/middlewares/authenticate";
-import { getMyOrganizations, getOrganizationById } from "@/controllers/org.controller";
 
 const router = Router();
 
 router.use(authenticate);
 
-router.get("/", getMyOrganizations);
-router.get("/:orgId", getOrganizationById);
+router.get("/:id", getJobStatus);
 
 export default router;

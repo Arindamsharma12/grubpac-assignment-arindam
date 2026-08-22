@@ -15,10 +15,8 @@ app.get("/health", (_req, res) => {
   });
 });
 
-// Mount all API routes
 app.use(routes);
 
-// Global error handler — must be registered LAST
 app.use(errorHandler);
 
 export default app;

@@ -40,7 +40,15 @@ The project uses Docker and Docker Compose for a seamless local development expe
    ```bash
    cp .env.example .env
    ```
-   *Note: For the local Docker Compose setup, the default values in `.env.example` (including the database and Redis URLs) will work automatically.*
+   The following environment variables are required:
+   - `NODE_ENV`: The environment mode (e.g., `development`, `production`).
+   - `PORT`: The port the API server should run on (e.g., `3000`).
+   - `DATABASE_URL`: Connection string for PostgreSQL.
+   - `REDIS_URL`: Connection string for Redis.
+   - `JWT_ACCESS_SECRET`: Secret key for signing access tokens.
+   - `JWT_REFRESH_SECRET`: Secret key for signing refresh tokens.
+
+   *Note: For the local Docker Compose setup, the default values in `.env.example` will work automatically without any changes.*
 
 2. **Start the Services**
    Run the following command to build the images and start the containers in detached mode:

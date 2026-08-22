@@ -3,15 +3,6 @@ import { redis } from "@/lib/config/redis";
 import { env } from "@/lib/config/env";
 import { TooManyRequestsError } from "@/lib/errors/AppError";
 
-/**
- * Redis-based sliding-window rate limiter for auth endpoints.
- *
- * Strategy: fixed-window counter using INCR + EXPIRE.
- * Key format: `rl:auth:<ip>:<window>`
- *
- * Defaults (from env):
- *   - 10 requests per 60-second window per IP
- */
 export async function rateLimiter(
   req: Request,
   _res: Response,
@@ -24,7 +15,7 @@ export async function rateLimiter(
 
     // Current window identifier (floors to the nearest window)
     const currentWindow = Math.floor(Date.now() / 1000 / windowSeconds);
-    const key = "rl:auth:${ip}:${currentWindow}";
+    const key = `rl:auth:${ip}:${currentWindow}`;
 
     const current = await redis.incr(key);
 

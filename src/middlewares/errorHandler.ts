@@ -17,13 +17,15 @@ export function errorHandler(
   // ── Operational errors (expected) ──────────────────────────────────
   if (err instanceof AppError) {
     const body: Record<string, unknown> = {
-      status: "error",
-      message: err.message,
+      error: err.message,
+      code: err.code || "INTERNAL_ERROR",
     };
 
     // Attach field-level validation details if present
     if ("details" in err) {
       body["details"] = (err as AppError & { details: unknown }).details;
+    } else {
+      body["details"] = {};
     }
 
     // Add Retry-After header for 429 responses
@@ -35,14 +37,14 @@ export function errorHandler(
     return;
   }
 
-  // ── Unexpected errors ──────────────────────────────────────────────
   console.error("Unhandled error:", err);
 
   res.status(500).json({
-    status: "error",
-    message:
+    error:
       env.NODE_ENV === "production"
         ? "Internal server error"
         : err.message || "Internal server error",
+    code: "INTERNAL_ERROR",
+    details: {},
   });
 }

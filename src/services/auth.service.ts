@@ -15,6 +15,35 @@ import type {
 } from "@/lib/validators/auth.validator";
 import { comparePassword, hashPassword } from "@/lib/utils/password.util";
 
+interface AuthTokens {
+  accessToken: string;
+  refreshToken: string;
+}
+
+interface UserView {
+  id: string;
+  name: string;
+  email: string;
+}
+
+interface RegisterResult extends AuthTokens {
+  user: UserView;
+  organization: { id: string; name: string };
+  membership: { id: string; role: string };
+}
+
+interface LoginResult extends AuthTokens {
+  user: UserView;
+}
+
+interface UserProfile {
+  id: string;
+  name: string;
+  email: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 // -- Helpers ----------------------------------------------------------
 
 function refreshTokenExpiresAt(): Date {
@@ -24,7 +53,7 @@ function refreshTokenExpiresAt(): Date {
 /**
  * Generate an access + refresh token pair and persist the refresh token hash.
  */
-async function issueTokens(user: { id: string; email: string }) {
+async function issueTokens(user: { id: string; email: string }): Promise<AuthTokens> {
   const accessToken = generateAccessToken({
     userId: user.id,
     email: user.email,
@@ -48,10 +77,7 @@ async function issueTokens(user: { id: string; email: string }) {
 // -- Service ----------------------------------------------------------
 
 export const authService = {
-  /**
-   * Register a new user, create their organization, and make them admin.
-   */
-  async register(input: RegisterInput) {
+  async register(input: RegisterInput): Promise<RegisterResult> {
     const { name, email, password, orgName } = input;
 
     // 1. Check uniqueness
@@ -100,7 +126,7 @@ export const authService = {
   /**
    * Authenticate with email + password, return tokens.
    */
-  async login(input: LoginInput) {
+  async login(input: LoginInput): Promise<LoginResult> {
     const { email, password } = input;
 
     // 1. Find user
@@ -130,7 +156,7 @@ export const authService = {
    * - Revoke the old token in DB
    * - Issue a brand-new access + refresh pair
    */
-  async refresh(refreshToken: string) {
+  async refresh(refreshToken: string): Promise<AuthTokens> {
     // 1. Verify JWT signature + expiry
     let payload;
     try {
@@ -189,7 +215,7 @@ export const authService = {
   /**
    * Revoke a single refresh token (single-device logout).
    */
-  async logout(refreshToken: string) {
+  async logout(refreshToken: string): Promise<void> {
     const tokenHash = sha256(refreshToken);
     const storedToken = await prisma.refreshToken.findUnique({
       where: { tokenHash },
@@ -206,10 +232,32 @@ export const authService = {
   /**
    * Revoke ALL refresh tokens for a user (logout all devices � bonus).
    */
-  async logoutAll(userId: string) {
+  async logoutAll(userId: string): Promise<void> {
     await prisma.refreshToken.updateMany({
       where: { userId },
       data: { revokedAt: new Date() },
     });
+  },
+
+  /**
+   * Get the current user's profile.
+   */
+  async getMe(userId: string): Promise<UserProfile> {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+
+    if (!user) {
+      throw new UnauthorizedError("User not found");
+    }
+
+    return user;
   },
 };

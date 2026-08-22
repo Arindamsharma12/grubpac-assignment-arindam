@@ -11,7 +11,6 @@ import {
 
 const router = Router();
 
-// All auth routes are rate-limited: 10 req/min/IP
 router.post(
   "/register",
   rateLimiter,
@@ -31,5 +30,7 @@ router.post(
 router.post("/logout", rateLimiter, authenticate, authController.logout);
 
 router.post("/logout-all", rateLimiter, authenticate, authController.logoutAll);
+
+router.get("/me", authenticate, authController.getMe);
 
 export default router;

@@ -27,5 +27,3 @@
   "include": ["src/**/*.ts", "generated/**/*.ts"],
   "exclude": ["node_modules", "dist", "tests"]
 }
-
-

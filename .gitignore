@@ -7,5 +7,4 @@ generated/
 coverage/
 
 .prisma/
-prisma/migrations/
 .DS_Store

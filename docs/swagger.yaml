@@ -4,6 +4,8 @@ info:
   description: API documentation for the TaskFlow backend
   version: 1.0.0
 servers:
+  - url: https://taskflow-api-sbc6.onrender.com
+    description: Production Server (Render)
   - url: http://localhost:3000
     description: Local development server
 components:

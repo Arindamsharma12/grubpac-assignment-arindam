@@ -27,7 +27,11 @@ Once the server is running locally, you can view and interact with the API endpo
 
 *(The raw OpenAPI schema is also available in the `docs/swagger.yaml` file).*
 
-## 4. Setup Instructions
+## 4. Screen Recording & Demo
+A short video demonstrating the project, key features, APIs, and important implementation decisions can be found here:
+**[Watch the Video Demo](https://drive.google.com/file/d/1LcP0ALIxCVBV14MFJSGiSO5XyQlVKNlK/view?usp=drive_link)**
+
+## 5. Setup Instructions
 The project uses Docker and Docker Compose for a seamless local development experience.
 
 ### Prerequisites
@@ -74,7 +78,7 @@ The project uses Docker and Docker Compose for a seamless local development expe
    curl http://localhost:3000/health
    ```
 
-## 5. Available Scripts
+## 6. Available Scripts
 The `package.json` file includes several useful scripts for local development, testing, and database management:
 
 ### Development & Build
@@ -97,9 +101,9 @@ The `package.json` file includes several useful scripts for local development, t
 - `npm run lint`: Lints the codebase using ESLint.
 - `npm run format`: Formats the codebase using Prettier.
 
-## 6. Security
+## 7. Security
 - **Credential Management:** Sensitive credentials, such as `DATABASE_URL` and `JWT` secrets, are managed exclusively via environment variables (`.env`). The `.env` file is explicitly ignored in `.gitignore`. **No passwords, API keys, or sensitive credentials are committed to the repository.**
 - **Authentication & Authorization:** The application implements secure JWT-based authentication. Passwords are securely hashed using `bcrypt` before being persisted to the database.
 
-## 7. Submission
+## 8. Submission
 This repository acts as the single source of truth for the assignment submission. All necessary code, configuration files, and documentation (Architecture, Setup, and API details) are accessible within this single location as per the submission requirements.

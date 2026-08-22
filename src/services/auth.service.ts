@@ -212,4 +212,26 @@ export const authService = {
       data: { revokedAt: new Date() },
     });
   },
+
+  /**
+   * Get the current user's profile.
+   */
+  async getMe(userId: string) {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        createdAt: true,
+        updatedAt: true,
+      }
+    });
+
+    if (!user) {
+      throw new UnauthorizedError("User not found");
+    }
+
+    return user;
+  },
 };

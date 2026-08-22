@@ -9,7 +9,13 @@ const router = Router();
 router.use("/auth", authRoutes);
 router.use("/orgs", orgRoutes);
 
+import { addMember } from "@/controllers/org.controller";
+import { authenticate } from "@/middlewares/authenticate";
+import { authorize } from "@/middlewares/authorize";
+
 const orgRouter = Router({ mergeParams: true });
+orgRouter.use(authenticate);
+orgRouter.post("/members", authorize("org_admin"), addMember);
 orgRouter.use("/projects", projectRoutes);
 orgRouter.use("/projects/:projectId/tasks", taskRoutes);
 

@@ -18,3 +18,23 @@ export const getMyOrganizations = async (
     next(error);
   }
 };
+
+export const addMember = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const orgId = req.params.orgId as string;
+    const { userId, role } = req.body;
+    
+    if (!orgId || !userId) {
+      throw new Error("orgId and userId are required");
+    }
+
+    const member = await OrgService.addMemberToOrganization(orgId, userId, role);
+    res.status(201).json({ data: member });
+  } catch (error) {
+    next(error);
+  }
+};

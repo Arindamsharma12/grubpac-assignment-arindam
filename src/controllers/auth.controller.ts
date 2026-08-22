@@ -141,4 +141,17 @@ export const authController = {
       next(err);
     }
   },
+
+  async getMe(req: Request, res: Response, next: NextFunction) {
+    try {
+      const userId = req.user!.userId;
+      const userProfile = await authService.getMe(userId);
+      res.status(200).json({
+        status: "success",
+        data: userProfile,
+      });
+    } catch (err) {
+      next(err);
+    }
+  },
 };
